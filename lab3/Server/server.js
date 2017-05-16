@@ -49,6 +49,8 @@ app.post("/updateCurrent", function (req, res) {
 function readUser() {
     "use strict";
     //TODO Lesen Sie die Benutzerdaten aus dem login.config File ein.
+    return fs.readFileSync('./resources/login.config');
+
 }
 
 function readDevices() {
