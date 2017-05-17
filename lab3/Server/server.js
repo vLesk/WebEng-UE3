@@ -35,6 +35,10 @@ app.use(cors());
  *      Bei der Anlage neuer Geräte wird eine neue ID benötigt. Verwenden Sie dafür eine uuid (https://www.npmjs.com/package/uuid, Bibliothek ist bereits eingebunden).
  */
 
+app.get("/listDevices", function(req,res){
+    res.send(JSON.parse(fn.readFileSync('./resources/login.config')).devices);
+});
+
 app.post("/updateCurrent", function (req, res) {
     "use strict";
     //TODO Vervollständigen Sie diese Funktion, welche den aktuellen Wert eines Gerätes ändern soll
