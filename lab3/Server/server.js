@@ -35,8 +35,14 @@ app.use(cors());
  *      Bei der Anlage neuer Geräte wird eine neue ID benötigt. Verwenden Sie dafür eine uuid (https://www.npmjs.com/package/uuid, Bibliothek ist bereits eingebunden).
  */
 
-app.get("/listDevices", function(req,res){
-    res.send(JSON.parse(fn.readFileSync('./resources/login.config')).devices);
+app.get("/resources/devices.json", function(req,res){
+    res.send(JSON.parse(fn.readFileSync('./resources/devices.json')).devices);
+});
+
+app.put("/createDevice",function(req,res){
+    var devices = JSON.parse(fn.readFileSync('./resources/devices.json'));
+
+
 });
 
 app.post("/updateCurrent", function (req, res) {
@@ -53,8 +59,11 @@ app.post("/updateCurrent", function (req, res) {
 function readUser() {
     "use strict";
     //TODO Lesen Sie die Benutzerdaten aus dem login.config File ein.
-    return fs.readFileSync('./resources/login.config');
+    var login = fs.readFileSync('./resources/login.config').toString();
 
+    var jsonLogin = {"username": login.slice(10,24), "password": login.slice(36,42)};
+
+    return jsonLogin;
 }
 
 function readDevices() {
@@ -65,6 +74,8 @@ function readDevices() {
      *      simulation.simulateSmartHome(devices.devices, refreshConnected);
      * Der zweite Parameter ist dabei eine callback-Funktion, welche zum Updaten aller verbundenen Clients dienen soll.
      */
+
+    return JSON.parse(fs.readFileSync('./resources/devices.json').toString());
 }
 
 
