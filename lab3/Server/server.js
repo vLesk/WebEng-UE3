@@ -18,6 +18,12 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 app.use(cors());
 
+var checkusername;
+var checkuserpassword;
+var devices;
+var startDate =  new Date();
+
+var loginfailed = 0;
 //TODO Implementieren Sie hier Ihre REST-Schnittstelle
 /* Ermöglichen Sie wie in der Angabe beschrieben folgende Funktionen:
  *  Abrufen aller Geräte als Liste
@@ -39,11 +45,155 @@ app.get("/resources/devices.json", function(req,res){
     res.send(JSON.parse(fn.readFileSync('./resources/devices.json')).devices);
 });
 
-app.put("/createDevice",function(req,res){
-    var devices = JSON.parse(fn.readFileSync('./resources/devices.json'));
+app.post("/listDevices", function (req, res) { 
+	"use strict";
+	console.log("listDevices");
+    var json = {
+        status: "OK",
+       	message: "List of Devices",
+        devices: devices.devices
+    }
 
-
+    res.json(json)
+    res.end();
 });
+
+app.post("/addDevice", function (req, res) { 
+	"use strict";
+    console.log("addDevice");
+  	try{
+		req.body.id = uuid();
+		console.log(".. " +  req.body) ;
+		devices.devices.push(req.body);
+		console.log("added Device ");
+	}catch (ex){
+		res.status(400).send(ex.message);
+		return;
+	}
+    res.status(200).send();
+    
+});
+
+app.post("/deleteDevice", function (req, res) { 
+	"use strict";
+    console.log("Delete devices");
+   	try{
+    var target;
+		for (var i in devices.devices){
+			if(devices.devices[i].id == req.body.id){
+				targetIndex = i;
+				break;
+			}
+		}
+		if(target === undefined)
+			throw new Error("Device not found.");
+		devices.devices.splice(target,1);
+
+ 	}catch (ex){
+     	res.status(400).send(ex.message);
+    }
+    res.status(200).send("Device deleted successfully.");
+});
+
+app.post("/updateDevice", function (req, res) { 
+	"use strict";
+    console.log("change/update Device");
+       try{
+            var targetDevice;
+            var targetUnit;
+            console.log("update called ... id:" + req.body.id);
+            for (var i in devices.devices){
+                if(devices.devices[i].id === req.body.id){
+                    targetDevice = devices.devices[i];
+                    break;
+                }
+            }
+            if(targetDevice === undefined)
+                throw new Error("Device not found.");
+
+            for (var i in targetDevice.control_units){
+                if(targetDevice.control_units[i].name == req.body.controlunit){
+                    targetUnit = targetDevice.control_units[i];
+                    break;
+                }
+                throw new Error("Control unit not found.");
+            }
+           
+            switch(targetUnit.type){
+                case "continuous":
+                    if(req.body.value<targetUnit.min || req.body.value > targetUnit.max)
+                        throw new Error("Continuous value out of range.");
+                    break;
+
+                case "boolean":
+                    if(req.body.value!=0 && req.body.value != 1)
+                        throw new Error("Boolean value out of range.");
+                    break;
+
+                case "enum":
+                    if(targetUnit.values.indexOf(req.body.value) <= -1)
+                        throw new Error("Enum value out of range.");
+                    break;
+
+                default:
+                    throw new Error("Control unit type unknown.");
+            }
+
+            if(targetUnit.type == "enum")
+                targetUnit.current = targetUnit.values.indexOf(req.body.value);
+            else
+                targetUnit.current = req.body.value;
+
+            console.log("targetUnit - current: "+targetUnit.current);
+
+            targetUnit.current = req.body.value;
+            console.log("targetDevice - name:" + targetDevice.display_name)
+            targetDevice.display_name = req.body.name;
+
+            console.log("targetDevice - name:" + targetDevice.display_name)
+
+        }catch (ex){
+            console.log("ERROR: " + ex.message);
+            res.status(400).send(ex.message);
+            return;
+        }
+        res.status(200).send("Device updated successfully.");  
+});
+
+app.post("/login", function (req, res) {
+    "use strict";
+    console.log("login attempt: username: " + req.body.username + " / password: " + req.body.password);
+    try{
+        if(req.body.username !== checkusername) throw new Error("Wrong username or password.(0) ___"+req.body.username+"="+validUsername);
+        if(req.body.password !== checkuserpassword) throw new Error("Wrong username or password. (1)");
+
+       //TODO Tokens...
+	   
+        res.status(200).json(token);
+
+    }catch (ex){
+        res.status(400).send(ex.message);
+        loginfailed ++;
+    }
+});
+
+app.post("/changePassword", function (req, res) { 
+	"use strict";
+    console.log('Parameter:' + req.params.id + ', ' + req.query.time);
+    res.writeHead(200, {'Content-Type':   'text/html'});
+    res.write("change Password");
+    res.end();
+});
+
+app.post("/serverStatus", function (req, res) { 
+	"use strict";
+   	res.json({
+            startdate: startDate,
+            loginerrors: wrongLogins
+    });
+    res.end();
+});
+
 
 app.post("/updateCurrent", function (req, res) {
     "use strict";
